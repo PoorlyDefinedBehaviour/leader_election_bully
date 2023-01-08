@@ -1,4 +1,3 @@
-use anyhow::Result;
 use axum::{response::IntoResponse, routing::post, Extension, Json, Router};
 use serde::{Deserialize, Serialize};
 use std::{
