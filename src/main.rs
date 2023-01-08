@@ -188,7 +188,6 @@ async fn main() {
                                     state = State::Candidate;
                                 }
 
-                                info!("will call tx_answer.send(ElectionResponse ...)");
                                 tx_answer.send(ElectionResponse { process_id }).expect("unable to send election response");
                             },
                             Message::Victory { request, tx_answer}  => {
