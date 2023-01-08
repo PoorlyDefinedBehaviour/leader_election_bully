@@ -121,9 +121,7 @@ async fn main() {
                 info!("process {process_id} is leader");
                 select! {
                     _ = leader_heartbeat_interval.tick() => {
-                        if let Err(err) = leader_heartbeats(process_id, &processes, &http_client).await {
-                            warn!("error sending leader heartbeats. error={:?}",err)
-                        }
+                        leader_heartbeats(process_id, &processes, &http_client).await;
                     }
                     message = rx_message.recv() => {
                         let message = message.unwrap();
@@ -327,10 +325,9 @@ async fn broadcast_victory(
                 .send()
                 .await
             {
-                Err(err) => {
+                Err(_err) => {
                     warn!(
-                        "unable to send victory message. error={:?} proc_id={} addr={}",
-                        err, proc_id, addr
+                        "broadcast: unable to send victory message. proc_id={proc_id} addr={addr}",
                     );
                 }
                 Ok(response) => {
@@ -371,10 +368,9 @@ async fn broadcast_election(
                 .send()
                 .await
             {
-                Err(err) => {
+                Err(_err) => {
                     warn!(
-                        "unable to broadcast election message. error={:?} proc_id={} addr={} url={}",
-                        err, proc_id, addr, url
+                        "broadcast: unable to send election message. proc_id={proc_id} addr={addr}",
                     );
                 }
                 Ok(response) => {
@@ -400,17 +396,19 @@ async fn leader_heartbeats(
     process_id: ProcessId,
     processes: &HashMap<ProcessId, ProcessAddress>,
     http_client: &reqwest::Client,
-) -> Result<()> {
+) {
     // TODO: could be done in parallel
     for (proc_id, addr) in processes.iter() {
         if *proc_id != process_id {
-            http_client
+            if http_client
                 .post(format!("http://{addr}/victory"))
                 .json(&VictoryRequest { process_id })
                 .send()
-                .await?;
+                .await
+                .is_err()
+            {
+                warn!("unable to send heartbeat to process. proc_id={proc_id} addr={addr}");
+            }
         }
     }
-
-    Ok(())
 }
