@@ -5,6 +5,7 @@ Bully algorithm for leader election
 # Running
 
 ```
+export RUST_LOG=info
 ID=0 cargo r
 ID=1 cargo r
 ID=2 cargo r
